@@ -1,0 +1,473 @@
+#################################################################
+## Iro
+################################################################ 
+##
+## * Press Ctrl + '+'/'-' To Zoom in
+## * Press Ctrl + S to save and recalculate... 
+## * Documents are saved to web storage.
+## * Only one save slot supported.
+## * Matches cannot span lines.
+## * Unicode chars must be defined in \u0000 to \uffff format.
+## * All matches must be contained by a single group ( ... )
+## * Look behinds not permitted, (?<= or (?<!
+## * Look forwards are permitted (?= or (?!
+## * Constants are defined as __my_const = (......)
+## * The \= format allows unescaped regular expressions
+## * Constants referenced by match \= $${__my_const}
+## * Constants can reference other constants
+## * You are free to delete all the default scopes.
+## * Twitter : ainslec , Web: http://eeyo.io/iro
+##
+################################################################
+
+name                   = sdbc
+file_extensions []     = sdbc;
+
+################################################################
+## Constants
+################################################################
+
+__MY_CONSTANT \= (NAME|VERSION|CONF|NODE|GPIO|VIRT|MSG|LINK|ADDR|SIG|FORMAT|TYPE)($| )
+
+################################################################
+## Styles
+################################################################
+
+styles [] {
+
+.comment : style {
+   color                 = light_green
+   italic                = true
+   ace_scope             = comment
+   textmate_scope        = comment
+   pygments_scope        = Comment
+}
+
+.keyword : style {
+   color                 = violet_red
+   // bold                  = true
+   ace_scope             = keyword
+   textmate_scope        = keyword
+   pygments_scope        = Keyword
+}
+
+.numeric : style {
+   color                 = gold
+   ace_scope             = constant.numeric
+   textmate_scope        = constant.numeric
+   pygments_scope        = Number
+}
+
+.op : style {
+   color                 = cyan
+   ace_scope             = punctuation
+   textmate_scope        = punctuation
+   pygments_scope        = Punctuation
+}
+
+.ctrl : style {
+   color                 = light_blue
+   ace_scope             = keyword.control
+   textmate_scope        = keyword.control
+   pygments_scope        = Operator
+}
+
+.string : style {
+   color                 = green
+   ace_scope             = text
+   textmate_scope        = text
+   pygments_scope        = String
+}
+
+.var : style {
+   color                 = light_grey
+   ace_scope             = variable
+   textmate_scope        = variable
+   pygments_scope        = Name.Variable
+}
+
+.desc : style {
+   color                 = grey
+   ace_scope             = comment.documentation
+   textmate_scope        = comment.documentation
+   pygments_scope        = String.Doc
+}
+
+.illegal : style {
+   color                 = red
+   ace_scope             = invalid
+   textmate_scope        = invalid
+   pygments_scope        = Generic.Error
+}
+
+}
+
+contexts [] {
+
+number : context {
+   : pattern {
+      uid             = uid_numeric
+      regex          \= ([+-]?([0-9]+|[0-9]+\.[0-9]+))
+      styles []       = .numeric;
+   }
+}
+
+numeric : context {
+   : pattern {
+      uid             = uid_numeric
+      regex          \= (0x[A-Fa-f0-9]+|[0-9]+)
+      styles []       = .numeric;
+   }
+}
+
+illegal : context {
+   : pattern {
+      uid             = uid_illegal
+      regex          \= ([^\s])
+      styles []       = .illegal;
+   }
+}
+
+desc_0 : context { # FIXME: Do not include ':' in desc itself, using lookback
+   : inline_push {
+      uid               = uid_description
+      // regex            \= (\s+:(?!.*:))
+      regex            \= (\s+(?<=(.*:.*){0}):)
+      styles []         = .desc;
+      : pattern { # FIXME: Comments in description
+         uid         = uid_description_text_0
+         regex      \= (.*)
+         styles []   = .desc;
+      }
+   }
+}
+
+desc_1 : context {
+   : inline_push {
+      uid               = uid_description
+      regex            \= (\s+(?<=(.*:.*){1}):)
+      styles []         = .desc;
+      : eol_pop {}
+      : pattern {
+         uid         = uid_description_text_1
+         regex      \= (.*)
+         styles []   = .desc;
+      }
+   }
+}
+
+desc_2 : context {
+   : inline_push {
+      uid               = uid_description
+      regex            \= (\s+(?<=(.*:.*){2}):)
+      styles []         = .desc;
+      : eol_pop {}
+      : pattern {
+         uid         = uid_description_text_2
+         regex      \= (.*)
+         styles []   = .desc;
+      }
+   }
+}
+
+desc_3 : context {
+   : inline_push {
+      uid               = uid_description
+      regex            \= (\s+(?<=(.*:.*){3}):)
+      styles []         = .desc;
+      : eol_pop {}
+      : pattern {
+         uid         = uid_description_text_3
+         regex      \= (.*)
+         styles []   = .desc;
+      }
+   }
+}
+
+
+string : context {
+   // : pattern {
+   //    regex          \= (\s"[^"\\]*(\\.[^"\\]*)*")
+   //    styles []       = .numeric;
+   // }
+   : inline_push {
+      uid             = uid_string
+      regex            \= (\")
+      styles []         = .string;
+      : pop {
+         regex      \= (\")
+         styles []   = .string;
+      }
+      : pattern {
+         regex      \= ([^"\\]*(\\.[^"\\]*)*)
+         styles []   = .string;
+      }
+   }
+}
+
+ID : context {
+   : pattern {
+      uid             = uid_ID
+      regex      \= ([A-Z_]+[A-Z0-9_]*)
+      styles []   = .var;
+   }
+}
+
+INTFLO : context {
+   : pattern {
+      uid             = uid_INTFLO
+      regex      \= (INTEGER|FLOATING)
+      styles []   = .keyword;
+   }
+}
+
+ADODI : context {
+   : pattern {
+      uid             = uid_ADODI
+      regex      \= (ANALOG|DIGITAL)
+      styles []   = .keyword;
+   }
+}
+
+IO : context {
+   : pattern {
+      uid             = uid_IO
+      regex      \= (OUTPUT|INPUT)
+      styles []   = .keyword;
+   }
+}
+
+seperator : context {
+   : pattern {
+      uid             = uid_seperator
+      regex      \= (\s+:\s+)
+      styles []   = .op;
+   }
+}
+
+comment : context {
+   : pattern {
+      regex          \= (\s#.*)
+      styles []       = .comment;
+   }
+}
+
+flow : context {
+   : pattern {
+      regex          \= (\s)(<<|>>)(\s)
+      styles []       = .ctrl;
+   }
+}
+
+main : context {
+   : inline_push {
+      uid            = uid_NAME
+      regex         \= (NAME)
+      styles []      = .keyword;
+      : eol_pop {}
+      : include "string";
+      : include "illegal";
+   }
+
+   : inline_push {
+      uid            = uid_VERSION
+      regex         \= (VERSION)
+      styles []      = .keyword;
+      : eol_pop {}
+      : pattern {
+         regex      \= (\b\d+\.\d+\.\d+)
+         styles []   = .numeric;
+      }
+      : include "illegal";
+   }
+   
+   : inline_push {
+      uid            = uid_CONF
+      regex            \= (CONF)
+      styles []         = .keyword;
+      : pop {
+         regex      \= ((?=(NODE|FORMAT|TYPE|VERSION|NAME|CONF)([^\w])))
+         styles []   = ;
+      }
+      : inline_push {
+         regex            \= (ANALOG_RES|VIRT_ID_OFF)
+         styles []         = .keyword;
+         : eol_pop {}
+         : include "seperator" ;
+         : include "numeric" ;
+         : include "illegal";
+      }
+
+      : include "illegal";
+   }
+   
+   : inline_push {
+      uid            = uid_NODE
+      regex            \= (NODE)([^\w])
+      styles []         = .keyword;
+      : pop {
+         regex      \= ((?=(NODE|FORMAT|TYPE|VERSION|NAME|CONF)([^\w])))
+         styles []   = ;
+      }
+      : include "comment" ;
+      : inline_push {
+         uid            = uid_GPIO
+         regex            \= (GPIO)([^\w])
+         styles []         = .keyword;
+         : eol_pop {}
+         : include "comment" ;
+         : include "ADODI" ;
+         : include "IO" ;
+         : include "ID" ;
+         : include "desc_1" ;
+         : include "seperator" ;
+         : include "numeric" ;
+         : include "illegal";
+      }
+      : inline_push {
+         uid            = uid_VIRT
+         regex            \= (VIRT)([^\w])
+         styles []         = .keyword;
+         : eol_pop {}
+         : include "comment" ;
+         : include "ADODI" ;
+         : include "IO" ;
+         : include "ID" ;
+         : include "desc_1" ;
+         : include "seperator" ;
+         : include "illegal";
+      }
+      : inline_push {
+         uid            = uid_ADDR
+         regex            \= (ADDR)([^\w])
+         styles []         = .keyword;
+         : eol_pop {}
+         : include "comment" ;
+         : include "numeric" ;
+         : pattern {
+            regex      \= (\s+-\s+)
+            styles []   = .op;
+         }
+         : include "desc_0" ;
+         : include "illegal";
+      }
+      : inline_push {
+         uid            = uid_MSG
+         regex            \= (MSG)([^\w])
+         styles []         = .keyword;
+         : pop {
+            regex      \= ((?=(NODE|MSG|GPIO|VIRT|LINK|ADDR|FORMAT|TYPE|SET|VERSION|NAME|CONF)([^\w])))
+            styles []   = ;
+         }
+         : inline_push {
+            uid            = uid_SIG
+            regex            \= (SIG)
+            styles []         = .keyword;
+            : eol_pop {}
+            : include "comment" ;
+            : include "ID" ;
+            : include "desc_1" ;
+            : include "seperator" ;
+            : include "string" ;
+            : include "flow" ;
+            : include "illegal";
+         }
+         : include "numeric" ;
+         : include "flow" ;
+         : include "comment" ;
+         : include "ID" ;
+         : include "desc_0" ;
+         : include "seperator" ;
+         : include "illegal";
+      }
+      : inline_push {
+         uid            = uid_LINK
+         regex            \= (LINK)(?=\s)
+         styles []         = .keyword;
+         : pop {
+            regex      \= ((?=(NODE|MSG|GPIO|VIRT|LINK|ADDR|FORMAT|TYPE|SIG|VERSION|NAME|CONF)([^\w])))
+            styles []   = ;
+         }
+         : inline_push {
+            uid            = uid_SET
+            regex            \= (SET)
+            styles []         = .keyword;
+            : eol_pop {}
+            : include "comment" ;
+            : include "ID" ;
+            : include "flow" ;
+            : include "desc_0" ;
+            : include "illegal";
+         }
+         : include "comment" ;
+         : include "flow" ;
+         : include "ID" ;
+         : include "desc_0" ;
+         : include "illegal";
+      }
+      : include "ID" ;
+      : include "desc_0" ;
+      : include "illegal";
+   }
+   
+   : inline_push {
+      uid            = uid_FORMAT
+      regex         \= (FORMAT)
+      styles []      = .keyword;
+      : eol_pop {}
+      : include "comment" ;
+      : include "string" ;
+      : include "desc_0" ;
+      
+      : inline_push {
+         regex            \= (\()
+         styles []         = .op;
+         : pop {
+            regex      \= (\))
+            styles []   = .op;
+         }
+         : include "comment" ;
+         : pattern {
+            regex      \= (,)
+            styles []   = .op;
+         }
+         : include "number" ;
+      }
+      : inline_push {
+         regex            \= (\[)
+         styles []         = .op;
+         : pop {
+            regex      \= (\])
+            styles []   = .op;
+         }
+         : include "comment" ;
+         : pattern {
+            regex      \= (,)
+            styles []   = .op;
+         }
+         : include "number" ;
+      }
+      : include "illegal";
+   }
+   
+   : inline_push {
+      uid            = uid_TYPE
+      regex         \= (TYPE)
+      styles []      = .keyword;
+      : eol_pop {}
+      : include "comment" ;
+      : include "INTFLO" ;
+      : include "string" ;
+      : pattern {
+         regex      \= (\+|-) 
+         styles []   = .op;
+      }
+      : include "numeric" ;
+      : include "desc_0" ;
+      : include "illegal";
+   }
+   
+   : include "comment" ;
+   : include "illegal";
+}
+}

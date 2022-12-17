@@ -1,0 +1,36 @@
+{
+    "name": "sdbc-sh",
+    "displayName": "SDBC - Syntax Highlighting",
+    "description": "Syntax Highlighting for SDBC Syntax",
+    "publisher": "Isaias",
+    "version": "1.0.0",
+    "engines": {
+        "vscode": ">=1.0.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [
+            {
+                "id": "sdbc",
+                "aliases": [
+                    "SDBC",
+                    "sdbc"
+                ],
+                "extensions": [
+                    ".sdbc",
+                    ".SDBC"
+                ],
+                "configuration": "./language-configuration.json"
+            }
+        ],
+        "grammars": [
+            {
+                "language": "sdbc",
+                "scopeName": "source.sdbc",
+                "path": "./syntaxes/sdbc.tmLanguage"
+            }
+        ]
+    }
+}
