@@ -10,6 +10,7 @@
     "categories": [
         "Programming Languages"
     ],
+    "repository": "https://github.com/LeHuman/sdbc-vscode-extension",
     "contributes": {
         "languages": [
             {
